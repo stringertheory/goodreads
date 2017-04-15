@@ -2,6 +2,8 @@ import requests
 import xmltodict
 import json
 
+import requests_cache
+requests_cache.install_cache()
 
 class GoodreadsRequestException(Exception):
     def __init__(self, error_msg, url):

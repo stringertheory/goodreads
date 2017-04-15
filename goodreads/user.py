@@ -1,4 +1,5 @@
 import collections
+import time
 
 from . import group
 from . import owned_book
@@ -74,13 +75,30 @@ class GoodreadsUser():
         except KeyError:
             owned_books = []
         return owned_books
-
-    def reviews(self, page=1):
+    
+    def _reviews(self, page):
         """Get all books and reviews on user's shelves"""
-        resp = self._client.session.get("/review/list.xml",
-                                        {'v': 2, 'id': self.gid, 'page': page})
-        return [review.GoodreadsReview(r) for r in resp['reviews']['review']]
+        # resp = self._client.session.get("/review/list.xml",
+        #                                 {'v': 2, 'id': self.gid, 'page': page})
+        resp = self._client.request("/review/list.xml",
+                                    {'v': 2, 'id': self.gid, 'page': page})
+        review_list = resp.get('reviews', {}).get('review', [])
+        return [review.GoodreadsReview(r) for r in review_list]
 
+    def reviews(self, page=None, delay=1):
+        if page is None:
+            result = []
+            page_number = 1
+            page_result = True
+            while page_result:
+                page_result = self.reviews(page=page_number)
+                # time.sleep(delay)
+                page_number += 1
+                result.extend(page_result)
+            return result
+        else:
+            return self._reviews(page=page)
+    
     def shelves(self, page=1):
         """Get the user's shelves. This method gets shelves only for users with
         public profile"""
